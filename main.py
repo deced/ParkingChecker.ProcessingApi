@@ -24,10 +24,10 @@ def intersection(spot, car):
 segment_image = instance_segmentation()
 segment_image.load_model("mask_rcnn_coco.h5")
 target_classes = segment_image.select_target_classes(car=True, truck=True)
-segmask, output = segment_image.segmentImage("img_3.png", segment_target_classes=target_classes, show_bboxes=True, output_image_name = "output.png")
+segmask, output = segment_image.segmentImage("17.jpg", segment_target_classes=target_classes, show_bboxes=True, output_image_name = "output.jpg")
 car_coords = segmask['rois']
 cars = list(car_coords)
-parking_spots = db.GetSpots()
+parking_spots = db.getSpots()
 max_intersec = 0.99
 isFound = False;
 for parking_spot in parking_spots:
@@ -41,4 +41,4 @@ for parking_spot in parking_spots:
     #     db.CreateParking(parking_spot['x1'], parking_spot['y1'], parking_spot['x2'], parking_spot['y2'])
 
 for car in cars :
-    db.CreateParking(int(car[0]), int(car[1]), int(car[2]), int(car[3]))
+    db.createParking(int(car[0]), int(car[1]), int(car[2]), int(car[3]))
