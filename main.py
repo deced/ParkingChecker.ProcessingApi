@@ -1,10 +1,19 @@
 import numpy
 import numpy as np
 import math
+
+import pixellib.instance
+
 import db
 import shapely.geometry as sg
 from pixellib.instance import instance_segmentation
 from pixellib.instance.mask_rcnn import MaskRCNN
+
+#---------CONFIG--------------
+pixellib.instance.coco_config = pixellib.instance.configuration(BACKBONE = "resnet101",  NUM_CLASSES =  81,  class_names = ["BG"], IMAGES_PER_GPU = 1,
+DETECTION_MIN_CONFIDENCE = 0.5,IMAGE_MAX_DIM = 1024, IMAGE_MIN_DIM = 800,IMAGE_RESIZE_MODE ="square",  GPU_COUNT = 1)
+#-----------------------------
+
 
 def intersection(spot, car):
     xmin = spot['x1']
