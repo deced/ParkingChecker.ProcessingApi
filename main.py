@@ -34,11 +34,10 @@ segment_image = instance_segmentation()
 segment_image.load_model("mask_rcnn_coco.h5")
 target_classes = segment_image.select_target_classes(car=True, truck=True)
 segmask, output = segment_image.segmentImage("17.jpg", segment_target_classes=target_classes, show_bboxes=True, output_image_name = "output.jpg")
-car_coords = segmask['rois']
-cars = list(car_coords)
+cars = segmask['rois']
 parking_spots = db.getSpots()
 max_intersec = 0.99
-isFound = False;
+isFound = False
 for parking_spot in parking_spots:
     for car in cars:
         if (intersection(parking_spot, car) >= max_intersec) :
