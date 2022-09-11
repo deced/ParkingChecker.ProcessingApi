@@ -34,6 +34,6 @@ def createParking(x1, y1, x2, y2):
         "y2": y2,
         "verificationCount": 0,
         "available": False,
-        "approved": True
+        "approved": False
     }
     spotCollection.insert_one(spot)

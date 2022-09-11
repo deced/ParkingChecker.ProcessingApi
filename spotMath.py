@@ -6,10 +6,10 @@ def intersection(spot, car):
     ymin = spot['y1']
     ymax = spot['y2']
     parking_spot = sg.box(xmin, ymin, xmax, ymax)
-    xmin = car[0]
-    xmax = car[2]
-    ymin = car[1]
-    ymax = car[3]
+    xmin = car[1]
+    ymin = car[0]
+    xmax = car[3]
+    ymax = car[2]
     car_spot = sg.box(xmin, ymin, xmax, ymax)
     intr = parking_spot.intersection(car_spot)
-    return max(intr.area / parking_spot.area, intr.area / car_spot.area)
+    return intr.area / (parking_spot.area + car_spot.area - intr.area)
