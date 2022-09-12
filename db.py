@@ -1,13 +1,18 @@
+import os
+
 from pymongo import MongoClient
+from dotenv import load_dotenv
 
 Param = 10
 
-client = MongoClient('mongodb://admin:fodffdsfgnoGUIYGb42d@45.83.123.118:27017/?authMechanism=DEFAULT')
-spotCollection = client.get_database("parking_checker").get_collection("parking_spot")
+load_dotenv("db_properties.env")
+
+client = MongoClient(os.getenv("DB_URL"))
+spotCollection = client.get_database(os.getenv("DATABASE_NAME")).get_collection(os.getenv("COLLECTION_NAME"))
 
 
 def incVerificationCount(spot):
-    if spot["verificationCount"] >= 19:
+    if spot["verificationCount"] >= int(os.getenv("VERIFICATION_COUNT")):
         spotCollection.update_one({"_id": spot['_id']}, {"$set": {"verificationCount": spot['verificationCount'] + 1,"approved" : True}})
     else:
         spotCollection.update_one({"_id": spot['_id']}, {"$set": {"verificationCount": spot['verificationCount'] + 1}})
@@ -20,6 +25,10 @@ def decVerificationCount(spot):
 
 def getSpots():
     return list(spotCollection.find({}))
+
+
+def getNotApprovedSpots():
+    return list(spotCollection.find({"approved": False}))
 
 def getApprovedSpots():
     return list(spotCollection.find({"approved": True}))
