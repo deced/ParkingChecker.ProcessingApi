@@ -10,9 +10,9 @@ import os
 from dotenv import load_dotenv
 
 
-def drawCar(car, idraw):
+def drawCar(car, idraw, color):
     list = (car[1], car[0], car[3], car[2])
-    idraw.rectangle(list, outline='blue', width=5)
+    idraw.rectangle(list, outline=color, width=5)
 
 
 def drawSpot(spot, idraw, color):
@@ -60,6 +60,9 @@ for path in paths:
     idraw = ImageDraw.Draw(image)
     cars = segmask['rois'].tolist()
 
+    for car in cars:
+        drawCar(car, idraw, 'blue')
+
     parking_spots = db.getApprovedSpots()
     for parking_spot in parking_spots:
         isAvailable = True
@@ -70,6 +73,8 @@ for path in paths:
                 break
         if isAvailable:
             drawSpot(parking_spot, idraw, 'green')
+        else:
+            drawSpot(parking_spot, idraw, 'red')
 
     parking_spots = db.getNotApprovedSpots()
 
