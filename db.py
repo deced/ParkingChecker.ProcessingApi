@@ -11,6 +11,11 @@ client = MongoClient(os.getenv("DB_URL"))
 spotCollection = client.get_database(os.getenv("DATABASE_NAME")).get_collection(os.getenv("COLLECTION_NAME"))
 
 
+def set_available(spot):
+    spotCollection.update_one({"_id": spot['_id']},
+                              {"$set": {"approved": True}})
+
+
 def inc_verification_count(spot):
     if spot["verificationCount"] >= int(os.getenv("VERIFICATION_COUNT")):
         spotCollection.update_one({"_id": spot['_id']}, {"$set": {"verificationCount": spot['verificationCount'] + 1, "approved": True}})

@@ -1,26 +1,14 @@
-from PIL import Image, ImageDraw, ImageFont
+from PIL import Image, ImageDraw
 from spotMath import intersection
 import pixellib.instance
 from os import listdir
-
+import drawing
 import db
 from pixellib.instance import instance_segmentation
 import os
 from dotenv import load_dotenv
 
 
-def draw_car(car, idraw, color):
-    list = (car[1], car[0], car[3], car[2])
-    idraw.rectangle(list, outline=color, width=5)
-
-
-def draw_spot(spot, idraw, color):
-    list = (spot['x1'], spot['y1'], spot['x2'], spot['y2'])
-    idraw.rectangle(list, outline=color, width=3)
-    font = ImageFont.truetype("arial.ttf", 25)
-    idraw.text((spot['x1'], spot['y1'] - 75), "vc: " + str(spot['verificationCount']), (255, 0, 0), font=font)
-    idraw.text((spot['x1'], spot['y1'] - 50), "av: " + str(spot['available']), (255, 0, 0), font=font)
-    idraw.text((spot['x1'], spot['y1'] - 25), "ap: " + str(spot['approved']), (255, 0, 0), font=font)
 
 
 # ---------CONFIG--------------
@@ -46,7 +34,7 @@ segment_image = instance_segmentation()
 segment_image.load_model(MODEL_CONFIG_PATH)
 target_classes = segment_image.select_target_classes(car=True, truck=True)
 
-# путь к папке где лежат все картинк
+# путь к папке где лежат все картинки
 images_directory = os.getenv("IMAGES_DIRECTORY")
 paths = listdir(images_directory)
 # photos = ["1.jpg", "2.jpg","3.jpg","4.jpg","5.jpg","6.jpg","7.jpg","8.jpg","9.jpg","10.jpg"]
@@ -56,11 +44,11 @@ for path in paths:
                                                  show_bboxes=True, verbose=True)
     # segmask, output = segment_image.segmentImage(imagesDirectory + photo, segment_target_classes=target_classes)
     image = Image.open(images_directory + path)
-    idraw = ImageDraw.Draw(image)
+    image_draw = ImageDraw.Draw(image)
     cars = segmask['rois'].tolist()
 
     for car in cars:
-        draw_car(car, idraw, 'blue')
+        drawing.draw_car(car, image_draw, 'blue')
 
     parking_spots = db.get_approved_spots()
     for parking_spot in parking_spots:
@@ -71,9 +59,10 @@ for path in paths:
                 cars.remove(car)
                 break
         if isAvailable:
-            draw_spot(parking_spot, idraw, 'green')
+            db.set_available(parking_spot)
+            drawing.draw_spot(parking_spot, image_draw, 'green')
         else:
-            draw_spot(parking_spot, idraw, 'red')
+            drawing.draw_spot(parking_spot, image_draw, 'red')
 
     parking_spots = db.get_not_approved_spots()
 
