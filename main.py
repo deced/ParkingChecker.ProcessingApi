@@ -36,14 +36,13 @@ target_classes = segment_image.select_target_classes(car=True, truck=True)
 
 # путь к папке где лежат все картинки
 images_directory = os.getenv("IMAGES_DIRECTORY")
-paths = listdir(images_directory)
 # photos = ["1.jpg", "2.jpg","3.jpg","4.jpg","5.jpg","6.jpg","7.jpg","8.jpg","9.jpg","10.jpg"]
-for path in paths:
-    print(path)
-    segmask, output = segment_image.segmentImage(images_directory + path, segment_target_classes=target_classes,
+i = 1
+while True:
+    segmask, output = segment_image.segmentImage(images_directory + "Screenshot_"+str(i)+".png", segment_target_classes=target_classes,
                                                  show_bboxes=True, verbose=True)
     # segmask, output = segment_image.segmentImage(imagesDirectory + photo, segment_target_classes=target_classes)
-    image = Image.open(images_directory + path)
+    image = Image.open(images_directory + "Screenshot_"+str(i)+".png")
     image_draw = ImageDraw.Draw(image)
     cars = segmask['rois'].tolist()
 
@@ -90,4 +89,5 @@ for path in paths:
     for car in cars:
         db.create_parking(int(car[1]), int(car[0]), int(car[3]), int(car[2]))
 
-    image.save("output\\" + path)
+    image.save("output\\" + str(i)+".png")
+    i = i + 1

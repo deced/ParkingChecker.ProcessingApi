@@ -13,7 +13,7 @@ spotCollection = client.get_database(os.getenv("DATABASE_NAME")).get_collection(
 
 def set_available(spot):
     spotCollection.update_one({"_id": spot['_id']},
-                              {"$set": {"approved": True}})
+                              {"$set": {"available": True}})
 
 
 def inc_verification_count(spot):
