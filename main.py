@@ -5,17 +5,16 @@ from os import listdir
 
 import db
 from pixellib.instance import instance_segmentation
-from pixellib.instance.mask_rcnn import MaskRCNN
 import os
 from dotenv import load_dotenv
 
 
-def drawCar(car, idraw, color):
+def draw_car(car, idraw, color):
     list = (car[1], car[0], car[3], car[2])
     idraw.rectangle(list, outline=color, width=5)
 
 
-def drawSpot(spot, idraw, color):
+def draw_spot(spot, idraw, color):
     list = (spot['x1'], spot['y1'], spot['x2'], spot['y2'])
     idraw.rectangle(list, outline=color, width=3)
     font = ImageFont.truetype("arial.ttf", 25)
@@ -54,16 +53,16 @@ paths = listdir(images_directory)
 for path in paths:
     print(path)
     segmask, output = segment_image.segmentImage(images_directory + path, segment_target_classes=target_classes,
-                                                 show_bboxes=True)
+                                                 show_bboxes=True, verbose=True)
     # segmask, output = segment_image.segmentImage(imagesDirectory + photo, segment_target_classes=target_classes)
     image = Image.open(images_directory + path)
     idraw = ImageDraw.Draw(image)
     cars = segmask['rois'].tolist()
 
     for car in cars:
-        drawCar(car, idraw, 'blue')
+        draw_car(car, idraw, 'blue')
 
-    parking_spots = db.getApprovedSpots()
+    parking_spots = db.get_approved_spots()
     for parking_spot in parking_spots:
         isAvailable = True
         for car in cars:
@@ -72,11 +71,11 @@ for path in paths:
                 cars.remove(car)
                 break
         if isAvailable:
-            drawSpot(parking_spot, idraw, 'green')
+            draw_spot(parking_spot, idraw, 'green')
         else:
-            drawSpot(parking_spot, idraw, 'red')
+            draw_spot(parking_spot, idraw, 'red')
 
-    parking_spots = db.getNotApprovedSpots()
+    parking_spots = db.get_not_approved_spots()
 
     # for car in cars:
     #     drawCar(car, idraw)
@@ -91,15 +90,15 @@ for path in paths:
             # if intr != 0:
             #     print(intr)
             if intr >= min_intersection:
-                db.incVerificationCount(parking_spot)
+                db.inc_verification_count(parking_spot)
                 cars.remove(car)
                 isFound = True
                 break
 
         if not isFound:
-            db.decVerificationCount(parking_spot)
+            db.dec_verification_count(parking_spot)
 
     for car in cars:
-        db.createParking(int(car[1]), int(car[0]), int(car[3]), int(car[2]))
+        db.create_parking(int(car[1]), int(car[0]), int(car[3]), int(car[2]))
 
     image.save("output\\" + path)
