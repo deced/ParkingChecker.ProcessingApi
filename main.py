@@ -1,5 +1,5 @@
 from PIL import Image, ImageDraw
-from spotMath import intersection
+from spotMath import intersection,inner_cars_intersection
 import pixellib.instance
 from os import listdir
 import drawing
@@ -40,11 +40,20 @@ images_directory = os.getenv("IMAGES_DIRECTORY")
 i = 1
 while True:
     segmask, output = segment_image.segmentImage(images_directory + "Screenshot_"+str(i)+".png", segment_target_classes=target_classes,
-                                                 show_bboxes=True, verbose=True)
+                                                 show_bboxes=True, verbose=True,output_image_name="out/"+str(i)+".png")
     # segmask, output = segment_image.segmentImage(imagesDirectory + photo, segment_target_classes=target_classes)
     image = Image.open(images_directory + "Screenshot_"+str(i)+".png")
     image_draw = ImageDraw.Draw(image)
     cars = segmask['rois'].tolist()
+
+
+    # удаляем дубликаты, по типу как тут https://i.imgur.com/Ocm3tHm.jpg
+    for car1 in cars:
+        for car2 in cars:
+            if car1[0] != car2[0] and car1[1] != car2[1] and car1[2] != car2[2] and car1[3] != car2[3]:
+                intr = inner_cars_intersection(car1, car2)
+                if intr > min_intersection:
+                    cars.remove(car2)
 
     for car in cars:
         drawing.draw_car(car, image_draw, 'blue')
@@ -89,5 +98,5 @@ while True:
     for car in cars:
         db.create_parking(int(car[1]), int(car[0]), int(car[3]), int(car[2]))
 
-    image.save("output\\" + str(i)+".png")
+    image.save("output/" + str(i)+".png")
     i = i + 1

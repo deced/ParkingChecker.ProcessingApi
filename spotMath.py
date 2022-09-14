@@ -1,5 +1,19 @@
 import shapely.geometry as sg
 
+def inner_cars_intersection(car1, car2):
+    xmin = car1[1]
+    xmax = car1[3]
+    ymin = car1[0]
+    ymax = car1[2]
+    car1_area = sg.box(xmin, ymin, xmax, ymax)
+    xmin = car2[1]
+    ymin = car2[0]
+    xmax = car2[3]
+    ymax = car2[2]
+    car2_spot = sg.box(xmin, ymin, xmax, ymax)
+    intr = car1_area.intersection(car2_spot)
+    return max(intr.area / car1_area.area, intr.area / car2_spot.area)
+
 def intersection(spot, car):
     xmin = spot['x1']
     xmax = spot['x2']
