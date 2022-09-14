@@ -9,8 +9,6 @@ import os
 from dotenv import load_dotenv
 
 
-
-
 # ---------CONFIG--------------
 
 
@@ -30,6 +28,54 @@ pixellib.instance.coco_config = pixellib.instance.configuration(BACKBONE=os.gete
                                                                 GPU_COUNT=int(os.getenv("GPU_COUNT")))
 # -----------------------------
 
+
+def draw_cars(cars):
+    for car in cars:
+        drawing.draw_car(car, image_draw, 'blue')
+
+
+def create_spots(cars):
+    for car in cars:
+        db.create_parking(int(car[1]), int(car[0]), int(car[3]), int(car[2]))
+
+
+def update_available_flag_and_trim_cars_and_draw_spots(spots, cars):
+    for parking_spot in spots:
+        is_available = True
+        for car in cars:
+            if intersection(parking_spot, car) >= min_valid_intersection:
+                is_available = False
+                cars.remove(car)
+                break
+        if is_available:
+            db.set_available(parking_spot)
+            drawing.draw_spot(parking_spot, image_draw, 'green')
+        else:
+            drawing.draw_spot(parking_spot, image_draw, 'red')
+
+
+def update_verification_count_and_trim_cars(spots, cars):
+    for parking_spot in spots:
+        is_found = False
+        for car in cars:
+            if intersection(parking_spot, car) >= min_intersection:
+                db.inc_verification_count(parking_spot)
+                cars.remove(car)
+                is_found = True
+                break
+        if not is_found:
+            db.dec_verification_count(parking_spot)
+
+
+def delete_car_duplicates(cars):
+    # удаляем дубликаты, по типу как тут https://i.imgur.com/Ocm3tHm.jpg
+    for car1 in cars:
+        for car2 in cars:
+            if car1[0] != car2[0] and car1[1] != car2[1] and car1[2] != car2[2] and car1[3] != car2[3]:
+                if inner_cars_intersection(car1, car2) > min_intersection:
+                    cars.remove(car2)
+
+
 segment_image = instance_segmentation()
 segment_image.load_model(MODEL_CONFIG_PATH)
 target_classes = segment_image.select_target_classes(car=True, truck=True)
@@ -44,59 +90,21 @@ while True:
     # segmask, output = segment_image.segmentImage(imagesDirectory + photo, segment_target_classes=target_classes)
     image = Image.open(images_directory + "Screenshot_"+str(i)+".png")
     image_draw = ImageDraw.Draw(image)
-    cars = segmask['rois'].tolist()
+    cars_from_image = segmask['rois'].tolist()
 
+    delete_car_duplicates(cars_from_image)
 
-    # удаляем дубликаты, по типу как тут https://i.imgur.com/Ocm3tHm.jpg
-    for car1 in cars:
-        for car2 in cars:
-            if car1[0] != car2[0] and car1[1] != car2[1] and car1[2] != car2[2] and car1[3] != car2[3]:
-                intr = inner_cars_intersection(car1, car2)
-                if intr > min_intersection:
-                    cars.remove(car2)
-
-    for car in cars:
-        drawing.draw_car(car, image_draw, 'blue')
+    draw_cars(cars_from_image)
 
     parking_spots = db.get_approved_spots()
-    for parking_spot in parking_spots:
-        isAvailable = True
-        for car in cars:
-            if intersection(parking_spot, car) >= min_valid_intersection:
-                isAvailable = False
-                cars.remove(car)
-                break
-        if isAvailable:
-            db.set_available(parking_spot)
-            drawing.draw_spot(parking_spot, image_draw, 'green')
-        else:
-            drawing.draw_spot(parking_spot, image_draw, 'red')
 
-    parking_spots = db.get_not_approved_spots()
+    update_available_flag_and_trim_cars_and_draw_spots(parking_spots, cars_from_image)
 
-    # for car in cars:
-    #     drawCar(car, idraw)
-    #
-    # for spot in parking_spots:
-    #     drawSpot(spot, idraw, 'red')
+    unverified_parking_spots = db.get_not_approved_spots()
 
-    for parking_spot in parking_spots:
-        isFound = False
-        for car in cars:
-            intr = intersection(parking_spot, car)
-            # if intr != 0:
-            #     print(intr)
-            if intr >= min_intersection:
-                db.inc_verification_count(parking_spot)
-                cars.remove(car)
-                isFound = True
-                break
+    update_verification_count_and_trim_cars(unverified_parking_spots, cars_from_image)
 
-        if not isFound:
-            db.dec_verification_count(parking_spot)
-
-    for car in cars:
-        db.create_parking(int(car[1]), int(car[0]), int(car[3]), int(car[2]))
+    create_spots(cars_from_image)
 
     image.save("output/" + str(i)+".png")
     i = i + 1
