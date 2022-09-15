@@ -34,9 +34,9 @@ def draw_cars(cars):
         drawing.draw_car(car, image_draw, 'blue')
 
 
-def create_spots(cars):
+def create_spots(cars, parking_id):
     for car in cars:
-        db.create_parking(int(car[1]), int(car[0]), int(car[3]), int(car[2]))
+        db.create_parking_spot(int(car[1]), int(car[0]), int(car[3]), int(car[2]), parking_id)
 
 
 def update_available_flag_and_trim_cars_and_draw_spots(spots, cars):
@@ -80,31 +80,31 @@ segment_image = instance_segmentation()
 segment_image.load_model(MODEL_CONFIG_PATH)
 target_classes = segment_image.select_target_classes(car=True, truck=True)
 
-# путь к папке где лежат все картинки
-images_directory = os.getenv("IMAGES_DIRECTORY")
-# photos = ["1.jpg", "2.jpg","3.jpg","4.jpg","5.jpg","6.jpg","7.jpg","8.jpg","9.jpg","10.jpg"]
 i = 1
 while True:
-    segmask, output = segment_image.segmentImage(images_directory + "Screenshot_"+str(i)+".png", segment_target_classes=target_classes,
-                                                 show_bboxes=True, verbose=True,output_image_name="out/"+str(i)+".png")
-    # segmask, output = segment_image.segmentImage(imagesDirectory + photo, segment_target_classes=target_classes)
-    image = Image.open(images_directory + "Screenshot_"+str(i)+".png")
-    image_draw = ImageDraw.Draw(image)
-    cars_from_image = segmask['rois'].tolist()
+    parking_queue_items = db.get_parking_image_queue()
+    for parking_queue_item in parking_queue_items:
+        image = Image.open(parking_queue_item["fullPath"])
+        image_draw = ImageDraw.Draw(image)
+        segmask, output = segment_image.segmentImage(parking_queue_item["fullPath"], segment_target_classes=target_classes,
+                                                     show_bboxes=True, verbose=True, output_image_name="out/" + parking_queue_item["fullPath"])
+        # segmask, output = segment_image.segmentImage(imagesDirectory + photo, segment_target_classes=target_classes)
+        cars_from_image = segmask['rois'].tolist()
 
-    delete_car_duplicates(cars_from_image)
+        delete_car_duplicates(cars_from_image)
 
-    draw_cars(cars_from_image)
+        draw_cars(cars_from_image)
 
-    parking_spots = db.get_approved_spots()
+        approved_parking_spots = db.get_approved_spots(parking_queue_item["parkingId"])
 
-    update_available_flag_and_trim_cars_and_draw_spots(parking_spots, cars_from_image)
+        update_available_flag_and_trim_cars_and_draw_spots(approved_parking_spots, cars_from_image)
 
-    unverified_parking_spots = db.get_not_approved_spots()
+        not_approved_parking_spots = db.get_not_approved_spots(parking_queue_item["parkingId"])
 
-    update_verification_count_and_trim_cars(unverified_parking_spots, cars_from_image)
+        update_verification_count_and_trim_cars(not_approved_parking_spots, cars_from_image)
 
-    create_spots(cars_from_image)
+        create_spots(cars_from_image, parking_queue_item["parkingId"])
 
-    image.save("output/" + str(i)+".png")
-    i = i + 1
+        image.save("output/" + os.path.basename(parking_queue_item["fullPath"]))
+
+        db.remove_from_image_queue(parking_queue_item)
