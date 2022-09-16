@@ -11,11 +11,19 @@ load_dotenv("db_properties.env")
 client = MongoClient(os.getenv("DB_URL"))
 spot_collection = client.get_database(os.getenv("DATABASE_NAME")).get_collection(os.getenv("SPOT_COLLECTION_NAME"))
 parking_image_collection = client.get_database(os.getenv("DATABASE_NAME")).get_collection(os.getenv("PARKING_IMAGE_COLLECTION_NAME"))
-
+output_image_collection = client.get_database(os.getenv("DATABASE_NAME")).get_collection(os.getenv("OUTPUT_IMAGE_COLLECTION_NAME"))
 def set_available(spot):
     spot_collection.update_one({"_id": spot['_id']},
                                {"$set": {"available": True, "lastUpdate": datetime.now()}})
 
+
+def save_image(path, parking_id, creationDate):
+    spot = {
+        "creationDate": creationDate,
+        "fullPath": path,
+        "parkingId": parking_id
+    }
+    spot_collection.insert_one(spot)
 
 def inc_verification_count(spot):
     if spot["verificationCount"] >= int(os.getenv("VERIFICATION_COUNT")):

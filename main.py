@@ -85,7 +85,9 @@ while True:
     parking_queue_items = db.get_parking_image_queue()
     for parking_queue_item in parking_queue_items:
         image = Image.open(parking_queue_item["fullPath"])
+
         image_draw = ImageDraw.Draw(image)
+
         segmask, output = segment_image.segmentImage(parking_queue_item["fullPath"], segment_target_classes=target_classes,
                                                      show_bboxes=True, verbose=True, output_image_name="out/" + parking_queue_item["fullPath"])
         # segmask, output = segment_image.segmentImage(imagesDirectory + photo, segment_target_classes=target_classes)
@@ -108,3 +110,5 @@ while True:
         image.save("output/" + os.path.basename(parking_queue_item["fullPath"]))
 
         db.remove_from_image_queue(parking_queue_item)
+
+        db.save_image("output/" + os.path.basename(parking_queue_item["fullPath"]), parking_queue_item["parkingId"], parking_queue_item["creationDate"])
