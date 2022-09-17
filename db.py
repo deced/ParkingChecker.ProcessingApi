@@ -17,13 +17,18 @@ def set_available(spot):
                                {"$set": {"available": True, "lastUpdate": datetime.now()}})
 
 
-def save_image(path, parking_id, creationDate):
+def save_image(path, parking_id):
     spot = {
-        "creationDate": creationDate,
+        "creationDate": datetime.now(),
         "fullPath": path,
         "parkingId": parking_id
     }
-    spot_collection.insert_one(spot)
+    existing_image = output_image_collection.find_one({"parkingId": parking_id})
+    if existing_image is None:
+        output_image_collection.insert_one(spot)
+    else:
+        output_image_collection.update_one({"parkingId": parking_id},
+                                   {"$set": {"fullPath": path, "creationDate": datetime.now() }})
 
 def inc_verification_count(spot):
     if spot["verificationCount"] >= int(os.getenv("VERIFICATION_COUNT")):

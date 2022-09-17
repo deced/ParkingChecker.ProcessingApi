@@ -111,4 +111,4 @@ while True:
 
         db.remove_from_image_queue(parking_queue_item)
 
-        db.save_image("output/" + os.path.basename(parking_queue_item["fullPath"]), parking_queue_item["parkingId"], parking_queue_item["creationDate"])
+        db.save_image(os.path.abspath("output/" + os.path.basename(parking_queue_item["fullPath"])), parking_queue_item["parkingId"])
