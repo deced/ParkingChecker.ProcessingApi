@@ -45,13 +45,17 @@ def update_available_flag_and_trim_cars_and_draw_spots(spots, cars):
         for car in cars:
             if intersection(parking_spot, car) >= min_valid_intersection:
                 is_available = False
+                parking_spot['x1'] = cars[1]
+                parking_spot['y1'] = car[0]
+                parking_spot['x2'] = car[3]
+                parking_spot['y2'] = car[2]
                 cars.remove(car)
                 break
         if is_available:
-            db.set_available(parking_spot)
+            db.set_available_and_update_position(parking_spot)
             drawing.draw_spot(parking_spot, image_draw, 'green')
-        else:
-            drawing.draw_spot(parking_spot, image_draw, 'red')
+        # else:
+            # drawing.draw_spot(parking_spot, image_draw, 'red')
 
 
 def update_verification_count_and_trim_cars(spots, cars):
@@ -95,7 +99,7 @@ while True:
 
         delete_car_duplicates(cars_from_image)
 
-        draw_cars(cars_from_image)
+        # draw_cars(cars_from_image)
 
         approved_parking_spots = db.get_approved_spots(parking_queue_item["parkingId"])
 
