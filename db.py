@@ -14,16 +14,18 @@ parking_image_collection = client.get_database(os.getenv("DATABASE_NAME")).get_c
 output_image_collection = client.get_database(os.getenv("DATABASE_NAME")).get_collection(os.getenv("OUTPUT_IMAGE_COLLECTION_NAME"))
 
 
-def set_available_and_update_position(spot):
-    spot_collection.update_one({"_id": spot['_id']},
-                               {"$set": {"available": True, "lastUpdate": datetime.now(),
-                                         "x1": spot['x1'], "y1": spot['y1'], "x2": spot['x2'], "y2": spot['y2']}})
+def set_available(spot):
+    spot_collection.update_one({"_id": spot['_id']}, {"$set": {"available": False, "lastUpdate": datetime.now()}})
+    # spot_collection.update_one({"_id": spot['_id']},
+    #                            {"$set": {"available": True, "lastUpdate": datetime.now(),
+    #                                      "x1": spot['x1'], "y1": spot['y1'], "x2": spot['x2'], "y2": spot['y2']}})
 
 
-def set_not_available_and_update_position(spot):
-    spot_collection.update_one({"_id": spot['_id']},
-                               {"$set": {"available": False, "lastUpdate": datetime.now(),
-                                         "x1": spot['x1'], "y1": spot['y1'], "x2": spot['x2'], "y2": spot['y2']}})
+def set_not_available(spot):
+    spot_collection.update_one({"_id": spot['_id']}, {"$set": {"available": False, "lastUpdate": datetime.now()}})
+    # spot_collection.update_one({"_id": spot['_id']},
+    #                            {"$set": {"available": False, "lastUpdate": datetime.now(),
+    #                                      "x1": spot['x1'], "y1": spot['y1'], "x2": spot['x2'], "y2": spot['y2']}})
 
 def save_image(path, parking_id):
     spot = {

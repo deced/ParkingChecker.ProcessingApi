@@ -1,5 +1,5 @@
 from PIL import Image, ImageDraw
-from spotMath import intersection,inner_cars_intersection
+from spotMath import intersection,cars_intersection
 import pixellib.instance
 from os import listdir
 import drawing
@@ -59,11 +59,11 @@ def update_available_flag_and_trim_cars_and_draw_spots(spots, cars):
                 cars.remove(car)
                 break
         if is_available:
-            db.set_available_and_update_position(parking_spot)
-            drawing.draw_spot(parking_spot, image_draw, 'red')
+            db.set_available(parking_spot)
+            drawing.draw_spot(parking_spot, image_draw, 'green')
         else:
-            db.set_not_available_and_update_position(parking_spot)
-            # drawing.draw_spot(parking_spot, image_draw, 'red')
+            db.set_not_available(parking_spot)
+            drawing.draw_spot(parking_spot, image_draw, 'red')
 
 
 def update_verification_count_and_trim_cars(spots, cars):
@@ -84,8 +84,9 @@ def delete_car_duplicates(cars):
     for car1 in cars:
         for car2 in cars:
             if car1[0] != car2[0] and car1[1] != car2[1] and car1[2] != car2[2] and car1[3] != car2[3]:
-                if inner_cars_intersection(car1, car2) > min_intersection:
-                    cars.remove(car2)
+                intersect, smaller_car = cars_intersection(car1, car2)
+                if intersect > min_intersection:
+                    cars.remove(smaller_car)
 
 
 segment_image = instance_segmentation()
@@ -102,7 +103,7 @@ while True:
             image_draw = ImageDraw.Draw(image)
 
             segmask, output = segment_image.segmentImage(parking_queue_item["fullPath"], segment_target_classes=target_classes,
-                                                         show_bboxes=True, verbose=True, output_image_name="out/" + parking_queue_item["fullPath"])
+                                                         show_bboxes=True, verbose=True)
             # segmask, output = segment_image.segmentImage(imagesDirectory + photo, segment_target_classes=target_classes)
             cars_from_image = segmask['rois'].tolist()
 
@@ -123,7 +124,6 @@ while True:
             x, y = image.size
             x2, y2 = math.floor(x/2), math.floor(y/2)
             image = image.resize((x2, y2), Image.ANTIALIAS)
-
             image.save("output/" + os.path.basename(parking_queue_item["fullPath"]),optimize=True, quality=95)
 
             db.remove_from_image_queue(parking_queue_item)
