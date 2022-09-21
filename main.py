@@ -29,6 +29,12 @@ pixellib.instance.coco_config = pixellib.instance.configuration(BACKBONE=os.gete
 # -----------------------------
 
 
+def log(ex):
+    file_object = open('1.log', 'a')
+    file_object.write(str(ex))
+    file_object.close()
+
+
 def draw_cars(cars):
     for car in cars:
         drawing.draw_car(car, image_draw, 'blue')
@@ -45,7 +51,7 @@ def update_available_flag_and_trim_cars_and_draw_spots(spots, cars):
         for car in cars:
             if intersection(parking_spot, car) >= min_valid_intersection:
                 is_available = False
-                parking_spot['x1'] = cars[1]
+                parking_spot['x1'] = car[1]
                 parking_spot['y1'] = car[0]
                 parking_spot['x2'] = car[3]
                 parking_spot['y2'] = car[2]
@@ -53,8 +59,9 @@ def update_available_flag_and_trim_cars_and_draw_spots(spots, cars):
                 break
         if is_available:
             db.set_available_and_update_position(parking_spot)
-            drawing.draw_spot(parking_spot, image_draw, 'green')
-        # else:
+            drawing.draw_spot(parking_spot, image_draw, 'red')
+        else:
+            db.set_not_available_and_update_position(parking_spot)
             # drawing.draw_spot(parking_spot, image_draw, 'red')
 
 
@@ -86,33 +93,36 @@ target_classes = segment_image.select_target_classes(car=True, truck=True)
 
 i = 1
 while True:
-    parking_queue_items = db.get_parking_image_queue()
-    for parking_queue_item in parking_queue_items:
-        image = Image.open(parking_queue_item["fullPath"])
+    try:
+        parking_queue_items = db.get_parking_image_queue()
+        for parking_queue_item in parking_queue_items:
+            image = Image.open(parking_queue_item["fullPath"])
 
-        image_draw = ImageDraw.Draw(image)
+            image_draw = ImageDraw.Draw(image)
 
-        segmask, output = segment_image.segmentImage(parking_queue_item["fullPath"], segment_target_classes=target_classes,
-                                                     show_bboxes=True, verbose=True, output_image_name="out/" + parking_queue_item["fullPath"])
-        # segmask, output = segment_image.segmentImage(imagesDirectory + photo, segment_target_classes=target_classes)
-        cars_from_image = segmask['rois'].tolist()
+            segmask, output = segment_image.segmentImage(parking_queue_item["fullPath"], segment_target_classes=target_classes,
+                                                         show_bboxes=True, verbose=True, output_image_name="out/" + parking_queue_item["fullPath"])
+            # segmask, output = segment_image.segmentImage(imagesDirectory + photo, segment_target_classes=target_classes)
+            cars_from_image = segmask['rois'].tolist()
 
-        delete_car_duplicates(cars_from_image)
+            delete_car_duplicates(cars_from_image)
 
-        # draw_cars(cars_from_image)
+            # draw_cars(cars_from_image)
 
-        approved_parking_spots = db.get_approved_spots(parking_queue_item["parkingId"])
+            approved_parking_spots = db.get_approved_spots(parking_queue_item["parkingId"])
 
-        update_available_flag_and_trim_cars_and_draw_spots(approved_parking_spots, cars_from_image)
+            update_available_flag_and_trim_cars_and_draw_spots(approved_parking_spots, cars_from_image)
 
-        not_approved_parking_spots = db.get_not_approved_spots(parking_queue_item["parkingId"])
+            not_approved_parking_spots = db.get_not_approved_spots(parking_queue_item["parkingId"])
 
-        update_verification_count_and_trim_cars(not_approved_parking_spots, cars_from_image)
+            update_verification_count_and_trim_cars(not_approved_parking_spots, cars_from_image)
 
-        create_spots(cars_from_image, parking_queue_item["parkingId"])
+            create_spots(cars_from_image, parking_queue_item["parkingId"])
 
-        image.save("output/" + os.path.basename(parking_queue_item["fullPath"]))
+            image.save("output/" + os.path.basename(parking_queue_item["fullPath"]))
 
-        db.remove_from_image_queue(parking_queue_item)
+            db.remove_from_image_queue(parking_queue_item)
 
-        db.save_image(os.path.abspath("output/" + os.path.basename(parking_queue_item["fullPath"])), parking_queue_item["parkingId"])
+            db.save_image(os.path.abspath("output/" + os.path.basename(parking_queue_item["fullPath"])), parking_queue_item["parkingId"])
+    except Exception as ex:
+        log(ex)
