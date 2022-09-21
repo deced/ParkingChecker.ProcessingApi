@@ -15,7 +15,7 @@ output_image_collection = client.get_database(os.getenv("DATABASE_NAME")).get_co
 
 
 def set_available(spot):
-    spot_collection.update_one({"_id": spot['_id']}, {"$set": {"available": False, "lastUpdate": datetime.now()}})
+    spot_collection.update_one({"_id": spot['_id']}, {"$set": {"available": True, "lastUpdate": datetime.now()}})
     # spot_collection.update_one({"_id": spot['_id']},
     #                            {"$set": {"available": True, "lastUpdate": datetime.now(),
     #                                      "x1": spot['x1'], "y1": spot['y1'], "x2": spot['x2'], "y2": spot['y2']}})
