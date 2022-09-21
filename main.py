@@ -7,6 +7,7 @@ import db
 from pixellib.instance import instance_segmentation
 import os
 from dotenv import load_dotenv
+import math
 
 
 # ---------CONFIG--------------
@@ -119,7 +120,11 @@ while True:
 
             create_spots(cars_from_image, parking_queue_item["parkingId"])
 
-            image.save("output/" + os.path.basename(parking_queue_item["fullPath"]))
+            x, y = image.size
+            x2, y2 = math.floor(x/2), math.floor(y/2)
+            image = image.resize((x2, y2), Image.ANTIALIAS)
+
+            image.save("output/" + os.path.basename(parking_queue_item["fullPath"]),optimize=True, quality=95)
 
             db.remove_from_image_queue(parking_queue_item)
 
